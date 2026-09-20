@@ -1,8 +1,51 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signout } from "@/app/actions";
+import { createProject, createTask } from "@/app/tasks-actions";
 
-export default async function Home() {
+type Proyecto = {
+  id: string;
+  name: string;
+  description: string | null;
+  due_at: string | null;
+};
+
+type Tarea = {
+  id: string;
+  title: string;
+  notes: string | null;
+  status: string;
+  due_at: string | null;
+  project_id: string | null;
+};
+
+const ESTADOS: Record<string, string> = {
+  pendiente: "Pendiente",
+  en_progreso: "En progreso",
+  completada: "Completada",
+};
+
+// Muestra una fecha en hora de Colombia, por ejemplo "12 may 2026".
+function formatoFecha(iso: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("es-CO", {
+    timeZone: "America/Bogota",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+const campo = "rounded border border-gray-400 p-2 text-sm";
+const boton = "rounded bg-blue-600 p-2 text-sm text-white hover:bg-blue-700";
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,18 +56,129 @@ export default async function Home() {
     redirect("/login");
   }
 
+  // Las reglas de seguridad (RLS) hacen que solo lleguen TUS filas.
+  const respProyectos = await supabase
+    .from("projects")
+    .select("id, name, description, due_at")
+    .order("created_at", { ascending: false });
+
+  const respTareas = await supabase
+    .from("tasks")
+    .select("id, title, notes, status, due_at, project_id")
+    .order("created_at", { ascending: false });
+
+  const proyectos = (respProyectos.data ?? []) as Proyecto[];
+  const tareas = (respTareas.data ?? []) as Tarea[];
+  const errorLectura = respProyectos.error || respTareas.error;
+
+  const nombreProyecto = new Map(proyectos.map((p) => [p.id, p.name]));
+
   return (
-    <main style={{ padding: 40, fontFamily: "sans-serif" }}>
-      <h1>ATLAS</h1>
-      <p>Sesión iniciada como {user.email}</p>
-      <form style={{ marginTop: 16 }}>
-        <button
-          formAction={signout}
-          style={{ padding: "8px 16px", border: "1px solid gray", borderRadius: 6 }}
-        >
-          Cerrar sesión
-        </button>
-      </form>
+    <main className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">ATLAS</h1>
+          <p className="text-sm text-gray-500">Sesión iniciada como {user.email}</p>
+        </div>
+        <form>
+          <button
+            formAction={signout}
+            className="rounded border border-gray-400 p-2 text-sm hover:bg-gray-500/10"
+          >
+            Cerrar sesión
+          </button>
+        </form>
+      </header>
+
+      <p className="rounded bg-yellow-500/10 p-2 text-xs text-yellow-600">
+        Pantalla provisional de la Fase 2: sirve para comprobar que los datos se guardan.
+      </p>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {errorLectura && (
+        <p className="text-sm text-red-500">No se pudieron leer tus datos.</p>
+      )}
+
+      {/* PROYECTOS */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-semibold">Proyectos</h2>
+
+        <form className="flex flex-col gap-2 rounded-xl border border-gray-400 p-4">
+          <input name="name" required maxLength={200} placeholder="Nombre del proyecto" className={campo} />
+          <input name="description" placeholder="Descripción (opcional)" className={campo} />
+          <label className="flex flex-col gap-1 text-xs text-gray-500">
+            Fecha límite (opcional)
+            <input name="due" type="date" className={campo} />
+          </label>
+          <button formAction={createProject} className={boton}>
+            Crear proyecto
+          </button>
+        </form>
+
+        {proyectos.length === 0 ? (
+          <p className="text-sm text-gray-500">Todavía no tienes proyectos.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {proyectos.map((p) => (
+              <li key={p.id} className="rounded border border-gray-400 p-3">
+                <p className="font-medium">{p.name}</p>
+                {p.description && <p className="text-sm text-gray-500">{p.description}</p>}
+                {p.due_at && (
+                  <p className="text-xs text-gray-500">Vence: {formatoFecha(p.due_at)}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* TAREAS */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-semibold">Tareas</h2>
+
+        <form className="flex flex-col gap-2 rounded-xl border border-gray-400 p-4">
+          <input name="title" required maxLength={300} placeholder="¿Qué necesitas hacer?" className={campo} />
+          <textarea name="notes" placeholder="Notas (opcional)" rows={2} className={campo} />
+          <label className="flex flex-col gap-1 text-xs text-gray-500">
+            Proyecto (opcional)
+            <select name="project_id" className={campo} defaultValue="">
+              <option value="">Sin proyecto</option>
+              {proyectos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-gray-500">
+            Fecha límite (opcional)
+            <input name="due" type="date" className={campo} />
+          </label>
+          <button formAction={createTask} className={boton}>
+            Crear tarea
+          </button>
+        </form>
+
+        {tareas.length === 0 ? (
+          <p className="text-sm text-gray-500">Todavía no tienes tareas.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {tareas.map((t) => (
+              <li key={t.id} className="rounded border border-gray-400 p-3">
+                <p className="font-medium">{t.title}</p>
+                {t.notes && <p className="text-sm text-gray-500">{t.notes}</p>}
+                <p className="text-xs text-gray-500">
+                  {ESTADOS[t.status] ?? t.status}
+                  {t.project_id && nombreProyecto.get(t.project_id)
+                    ? ` · ${nombreProyecto.get(t.project_id)}`
+                    : ""}
+                  {t.due_at ? ` · Vence: ${formatoFecha(t.due_at)}` : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }
