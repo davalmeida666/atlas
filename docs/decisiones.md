@@ -7,4 +7,7 @@
 - PENDIENTE DE SEGURIDAD: la confirmación de correo está desactivada en desarrollo. Activarla y crear la ruta de confirmación antes de usar ATLAS con datos reales.- Fase 2: tablas projects y tasks con RLS. user_id se rellena solo (auth.uid()) y cada usuario solo accede a sus filas.
 - Fase 2: subtareas en la misma tabla tasks mediante parent_id.
 - PENDIENTE DE SEGURIDAD: verificar que project_id y parent_id pertenezcan al mismo usuario (hoy solo se valida user_id).
-- El SQL de cada cambio se guarda en docs/sql/ con número de orden.
+- El SQL de cada cambio se guarda en docs/sql/ con número de orden.- Fase 2: pantalla provisional en la página principal para crear y listar proyectos y tareas.
+- TEMPORAL: las fechas límite se guardan a las 23:59 con desfase -05:00 (Colombia). Pendiente: zona horaria por usuario.
+- Fase 2: completar/reabrir y borrar tareas y proyectos. Borrar pide confirmación previa.
+- Fase 2: RLS verificado con un segundo usuario: cada cuenta solo ve sus propios datos.
