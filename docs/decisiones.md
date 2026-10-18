@@ -20,3 +20,4 @@
 - Fase 4 parte A: el interprete ahora propone subtareas (3 a 8) cuando el tipo es "proyecto". Las subtareas se crean sin fecha propia; el reparto de fechas es una fase futura (Planificador).- Fase 4 parte C: al crear un proyecto desde la barra de comando, se guardan tambien las subtareas marcadas, ligadas con project_id. Si el proyecto se crea pero las subtareas fallan, el proyecto se mantiene (no se revierte).
 - Fase 5 parte A: tabla scopes (ambitos) con RLS. projects y tasks tienen scope_id opcional.
 - Ambitos iniciales sembrados: Universidad, Personal, Salud y Bienestar, Social, Proyectos Personales.
+- Fase 5 parte B: seccion de ambitos (crear, borrar) y selector de ambito en cada proyecto y tarea, que guarda al cambiar.

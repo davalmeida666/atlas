@@ -195,3 +195,87 @@ export async function createFromInterpretation(formData: FormData) {
   revalidatePath("/");
   redirect("/");
 }
+
+// Crea un ámbito nuevo, a mano (el usuario siempre decide crearlos).
+export async function createScope(formData: FormData) {
+  const supabase = await createClient();
+
+  const name = texto(formData, "name");
+  if (!name) volverConError("El ámbito necesita un nombre.");
+
+  const { error } = await supabase.from("scopes").insert({ name });
+
+  if (error) {
+    console.error("createScope:", error.message);
+    if (error.code === "23505") {
+      // Código de Postgres para "ya existe" (viola la regla unique).
+      volverConError("Ya tienes un ámbito con ese nombre.");
+    }
+    volverConError("No se pudo crear el ámbito.");
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+// Borra un ámbito. Sus proyectos y tareas NO se borran: quedan sin ámbito.
+export async function deleteScope(formData: FormData) {
+  const supabase = await createClient();
+
+  const id = texto(formData, "id");
+  if (!id) volverConError("No se pudo borrar el ámbito.");
+
+  const { error } = await supabase.from("scopes").delete().eq("id", id);
+
+  if (error) {
+    console.error("deleteScope:", error.message);
+    volverConError("No se pudo borrar el ámbito.");
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+// Asigna (o quita) el ámbito de un proyecto existente.
+export async function setProjectScope(formData: FormData) {
+  const supabase = await createClient();
+
+  const id = texto(formData, "id");
+  const scopeId = texto(formData, "scope_id") || null;
+  if (!id) volverConError("No se pudo asignar el ámbito.");
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ scope_id: scopeId })
+    .eq("id", id);
+
+  if (error) {
+    console.error("setProjectScope:", error.message);
+    volverConError("No se pudo asignar el ámbito.");
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}
+
+// Asigna (o quita) el ámbito de una tarea existente.
+export async function setTaskScope(formData: FormData) {
+  const supabase = await createClient();
+
+  const id = texto(formData, "id");
+  const scopeId = texto(formData, "scope_id") || null;
+  if (!id) volverConError("No se pudo asignar el ámbito.");
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ scope_id: scopeId })
+    .eq("id", id);
+
+  if (error) {
+    console.error("setTaskScope:", error.message);
+    volverConError("No se pudo asignar el ámbito.");
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}

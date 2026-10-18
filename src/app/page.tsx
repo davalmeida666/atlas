@@ -7,15 +7,23 @@ import {
   setTaskStatus,
   deleteTask,
   deleteProject,
+  createScope,
+  deleteScope,
+  setProjectScope,
+  setTaskScope,
 } from "@/app/tasks-actions";
 import BarraComando from "@/app/BarraComando";
 
-
+type Ambito = {
+  id: string;
+  name: string;
+};
 type Proyecto = {
   id: string;
   name: string;
   description: string | null;
   due_at: string | null;
+  scope_id: string | null;
 };
 
 type Tarea = {
@@ -25,6 +33,7 @@ type Tarea = {
   status: string;
   due_at: string | null;
   project_id: string | null;
+  scope_id: string | null;
 };
 
 const ESTADOS: Record<string, string> = {
@@ -67,21 +76,26 @@ export default async function Home({
   if (!user) {
     redirect("/login");
   }
-
+  const respAmbitos = await supabase
+    .from("scopes")
+    .select("id, name")
+    .order("name", { ascending: true });
   // Las reglas de seguridad (RLS) hacen que solo lleguen TUS filas.
   const respProyectos = await supabase
     .from("projects")
-    .select("id, name, description, due_at")
+    .select("id, name, description, due_at, scope_id")
     .order("created_at", { ascending: false });
 
   const respTareas = await supabase
     .from("tasks")
-    .select("id, title, notes, status, due_at, project_id")
+    .select("id, title, notes, status, due_at, project_id, scope_id")
     .order("created_at", { ascending: false });
 
+    const ambitos = (respAmbitos.data ?? []) as Ambito[];
   const proyectos = (respProyectos.data ?? []) as Proyecto[];
   const tareas = (respTareas.data ?? []) as Tarea[];
-  const errorLectura = respProyectos.error || respTareas.error;
+  const errorLectura = respAmbitos.error || respProyectos.error || respTareas.error;
+  const nombreAmbito = new Map(ambitos.map((a) => [a.id, a.name]));
 
   const nombreProyecto = new Map(proyectos.map((p) => [p.id, p.name]));
 
@@ -112,7 +126,35 @@ export default async function Home({
       {errorLectura && (
         <p className="text-sm text-red-500">No se pudieron leer tus datos.</p>
       )}
+      {/* ÁMBITOS */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-semibold">Ámbitos</h2>
 
+        <form className="flex gap-2">
+          <input name="name" required maxLength={100} placeholder="Nombre del ámbito" className={campo} />
+          <button formAction={createScope} className={boton}>
+            Crear ámbito
+          </button>
+        </form>
+
+        {ambitos.length === 0 ? (
+          <p className="text-sm text-gray-500">Todavía no tienes ámbitos.</p>
+        ) : (
+          <ul className="flex flex-wrap gap-2">
+            {ambitos.map((a) => (
+              <li key={a.id} className="flex items-center gap-2 rounded-full border border-gray-400 px-3 py-1 text-sm">
+                {a.name}
+                <form>
+                  <input type="hidden" name="id" value={a.id} />
+                  <button formAction={deleteScope} className="text-red-500 hover:underline" title="Borrar ámbito">
+                    ×
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       {/* PROYECTOS */}
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Proyectos</h2>
@@ -142,6 +184,25 @@ export default async function Home({
                     <p className="text-xs text-gray-500">Vence: {formatoFecha(p.due_at)}</p>
                   )}
                 </div>
+                                <form className="flex items-center gap-2 text-xs">
+                  <input type="hidden" name="id" value={p.id} />
+                  <label className="text-gray-500">Ámbito:</label>
+                                    <select
+                    name="scope_id"
+                    defaultValue={p.scope_id ?? ""}
+                    className="rounded border border-gray-400 p-1"
+                  >
+                    <option value="">Sin ámbito</option>
+                    {ambitos.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button formAction={setProjectScope} className={botonChico}>
+                    Guardar
+                  </button>
+                </form>
                 <details className="text-xs">
                   <summary className="cursor-pointer text-red-500">Borrar proyecto</summary>
                   <form className="mt-2 flex flex-col gap-2">
@@ -203,15 +264,36 @@ export default async function Home({
                     {t.title}
                   </p>
                   {t.notes && <p className="text-sm text-gray-500">{t.notes}</p>}
-                  <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-gray-500">
                     {ESTADOS[t.status] ?? t.status}
                     {t.project_id && nombreProyecto.get(t.project_id)
                       ? ` · ${nombreProyecto.get(t.project_id)}`
                       : ""}
+                    {t.scope_id && nombreAmbito.get(t.scope_id)
+                      ? ` · ${nombreAmbito.get(t.scope_id)}`
+                      : ""}
                     {t.due_at ? ` · Vence: ${formatoFecha(t.due_at)}` : ""}
                   </p>
+                                    <form className="mt-1 flex items-center gap-2 text-xs">
+                    <input type="hidden" name="id" value={t.id} />
+                    <label className="text-gray-500">Ámbito:</label>
+                    <select
+                      name="scope_id"
+                      defaultValue={t.scope_id ?? ""}
+                      className="rounded border border-gray-400 p-1"
+                    >
+                      <option value="">Sin ámbito</option>
+                      {ambitos.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button formAction={setTaskScope} className={botonChico}>
+                      Guardar
+                    </button>
+                  </form>
                 </div>
-
                 <div className="flex flex-wrap items-start gap-4">
                   <div className="flex gap-2">
                     {t.status === "pendiente" && (
