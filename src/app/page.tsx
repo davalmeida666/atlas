@@ -10,6 +10,7 @@ import {
 } from "@/app/tasks-actions";
 import BarraComando from "@/app/BarraComando";
 
+
 type Proyecto = {
   id: string;
   name: string;
@@ -105,7 +106,7 @@ export default async function Home({
         Pantalla provisional de la Fase 2: sirve para comprobar que los datos se guardan.
       </p>
             <BarraComando proyectos={proyectos} />
-            
+
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       {errorLectura && (
