@@ -7,7 +7,6 @@ export async function interpretarTextoAction(texto: string) {
     throw new Error("Escribe algo primero.");
   }
 
-  // La fecha de hoy la calcula el SERVIDOR, en hora de Colombia.
   const hoyISO = new Date().toLocaleDateString("sv-SE", {
     timeZone: "America/Bogota",
   });

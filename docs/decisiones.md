@@ -15,3 +15,5 @@
 - PENDIENTE: vulnerabilidad de "braces" via eslint-config-next. Es solo del linter (no afecta a usuarios ni esta en produccion). Revisar cuando eslint-config-next tenga una version compatible con Next 16.
 - Fase 3 parte B: interprete de lenguaje natural con Gemini (gemini-flash-latest). Responde JSON validado por el codigo; el codigo nunca confia ciegamente en el modelo.
 - TEMPORAL: pantalla /interprete-test solo para pruebas, se elimina en la parte C.
+- Fase 3 parte C: barra de lenguaje natural en la pantalla principal, con tarjeta de confirmacion antes de guardar (Nivel 1 de permisos: sugerir).
+- Se elimino la pantalla temporal /interprete-test.

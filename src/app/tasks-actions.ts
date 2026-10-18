@@ -130,3 +130,40 @@ export async function deleteProject(formData: FormData) {
   revalidatePath("/");
   redirect("/");
 }
+
+// Crea una tarea o proyecto a partir de lo que interpretó la IA.
+// El usuario ya vio y confirmó esta información antes de llamar a esto.
+export async function createFromInterpretation(formData: FormData) {
+  const supabase = await createClient();
+
+  const titulo = texto(formData, "titulo");
+  const tipo = texto(formData, "tipo");
+  const fechaPlano = texto(formData, "fecha"); // AAAA-MM-DD o vacío
+
+  if (!titulo) volverConError("No hay título para guardar.");
+
+  const due = fechaPlano ? fechaLimite(fechaPlano) : null;
+
+  if (tipo === "proyecto") {
+    const { error } = await supabase.from("projects").insert({
+      name: titulo,
+      due_at: due,
+    });
+    if (error) {
+      console.error("createFromInterpretation(proyecto):", error.message);
+      volverConError("No se pudo crear el proyecto.");
+    }
+  } else {
+    const { error } = await supabase.from("tasks").insert({
+      title: titulo,
+      due_at: due,
+    });
+    if (error) {
+      console.error("createFromInterpretation(tarea):", error.message);
+      volverConError("No se pudo crear la tarea.");
+    }
+  }
+
+  revalidatePath("/");
+  redirect("/");
+}
