@@ -17,3 +17,4 @@
 - TEMPORAL: pantalla /interprete-test solo para pruebas, se elimina en la parte C.
 - Fase 3 parte C: barra de lenguaje natural en la pantalla principal, con tarjeta de confirmacion antes de guardar (Nivel 1 de permisos: sugerir).
 - Se elimino la pantalla temporal /interprete-test.
+- Fase 4 parte A: el interprete ahora propone subtareas (3 a 8) cuando el tipo es "proyecto". Las subtareas se crean sin fecha propia; el reparto de fechas es una fase futura (Planificador).

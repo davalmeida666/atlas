@@ -6,6 +6,7 @@ export type TareaInterpretada = {
   titulo: string;
   tipo: "tarea" | "proyecto";
   fecha: string | null; // formato AAAA-MM-DD, o null si no detectó fecha
+  subtareas: string[]; // vacío si tipo es "tarea", o si no se pudieron proponer
 };
 
 // Le pide a Gemini que devuelva SIEMPRE este formato exacto.
@@ -13,7 +14,7 @@ const INSTRUCCIONES = `Eres el interprete de ATLAS, un asistente de tareas.
 Recibes una frase en español de un estudiante y devuelves SOLO un JSON,
 sin texto adicional, sin backticks de markdown, con esta forma exacta:
 
-{"titulo": string, "tipo": "tarea" o "proyecto", "fecha": "AAAA-MM-DD" o null}
+{"titulo": string, "tipo": "tarea" o "proyecto", "fecha": "AAAA-MM-DD" o null, "subtareas": string[]}
 
 Reglas:
 - "titulo": un resumen corto y claro de lo que hay que hacer.
@@ -22,8 +23,10 @@ Reglas:
 - "fecha": si el texto menciona un dia (hoy, manana, el martes, el 15 de mayo),
   calcula la fecha real usando la FECHA DE HOY que te doy abajo. Si no hay
   ninguna fecha mencionada, usa null. Nunca inventes una fecha que no este
-  implicada por el texto.`;
-
+  implicada por el texto.
+- "subtareas": SOLO si "tipo" es "proyecto", propone entre 3 y 8 pasos cortos,
+  en orden logico, para completarlo (ejemplo: ["Guion", "Storyboard", "Edicion"]).
+  Si "tipo" es "tarea", "subtareas" debe ser un arreglo vacio: [].`;
 export async function interpretarTexto(
   texto: string,
   hoyISO: string // formato AAAA-MM-DD, ej. "2026-10-18"
@@ -71,9 +74,18 @@ export async function interpretarTexto(
     fecha = obj.fecha;
   }
 
-  if (!titulo) {
+    if (!titulo) {
     throw new Error("El titulo interpretado esta vacio.");
   }
 
-  return { titulo, tipo, fecha };
+  // Validamos las subtareas: deben ser texto, no vacias, y como mucho 8.
+  let subtareas: string[] = [];
+  if (tipo === "proyecto" && Array.isArray(obj.subtareas)) {
+    subtareas = obj.subtareas
+      .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+      .map((s) => s.trim())
+      .slice(0, 8);
+  }
+
+  return { titulo, tipo, fecha, subtareas };
 }
