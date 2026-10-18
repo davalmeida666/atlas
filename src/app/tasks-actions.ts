@@ -131,7 +131,9 @@ export async function deleteProject(formData: FormData) {
   redirect("/");
 }
 
-// Crea una tarea o proyecto a partir de lo que interpretó la IA.
+
+// Crea una tarea o proyecto a partir de lo que interpretó la IA,
+// junto con las subtareas que el usuario dejó marcadas (si las hay).
 // El usuario ya vio y confirmó esta información antes de llamar a esto.
 export async function createFromInterpretation(formData: FormData) {
   const supabase = await createClient();
@@ -139,19 +141,45 @@ export async function createFromInterpretation(formData: FormData) {
   const titulo = texto(formData, "titulo");
   const tipo = texto(formData, "tipo");
   const fechaPlano = texto(formData, "fecha"); // AAAA-MM-DD o vacío
+  const subtareasTexto = texto(formData, "subtareas"); // separadas por saltos de línea
 
   if (!titulo) volverConError("No hay título para guardar.");
 
   const due = fechaPlano ? fechaLimite(fechaPlano) : null;
 
+  const subtareas = subtareasTexto
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
   if (tipo === "proyecto") {
-    const { error } = await supabase.from("projects").insert({
-      name: titulo,
-      due_at: due,
-    });
-    if (error) {
-      console.error("createFromInterpretation(proyecto):", error.message);
+    // Paso 1: crear el proyecto y leer su id.
+    const { data: proyectoCreado, error: errorProyecto } = await supabase
+      .from("projects")
+      .insert({ name: titulo, due_at: due })
+      .select("id")
+      .single();
+
+    if (errorProyecto || !proyectoCreado) {
+      console.error("createFromInterpretation(proyecto):", errorProyecto?.message);
       volverConError("No se pudo crear el proyecto.");
+    }
+
+    // Paso 2: crear cada subtarea, ligada a ese proyecto.
+    if (subtareas.length > 0) {
+      const filas = subtareas.map((title) => ({
+        title,
+        project_id: proyectoCreado.id,
+      }));
+
+      const { error: errorSubtareas } = await supabase.from("tasks").insert(filas);
+
+      if (errorSubtareas) {
+        console.error("createFromInterpretation(subtareas):", errorSubtareas.message);
+        // El proyecto ya se creó; avisamos pero no revertimos nada,
+        // para no borrar algo que el usuario sí alcanzó a ver creado.
+        volverConError("El proyecto se creó, pero no se pudieron guardar las subtareas.");
+      }
     }
   } else {
     const { error } = await supabase.from("tasks").insert({
