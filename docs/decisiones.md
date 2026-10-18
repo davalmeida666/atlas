@@ -11,3 +11,5 @@
 - TEMPORAL: las fechas límite se guardan a las 23:59 con desfase -05:00 (Colombia). Pendiente: zona horaria por usuario.
 - Fase 2: completar/reabrir y borrar tareas y proyectos. Borrar pide confirmación previa.
 - Fase 2: RLS verificado con un segundo usuario: cada cuenta solo ve sus propios datos.
+- Fase 3: se corrigio la vulnerabilidad critica de Next.js (subido a 16.4.2) y las de sharp y source-map-js.
+- PENDIENTE: vulnerabilidad de "braces" via eslint-config-next. Es solo del linter (no afecta a usuarios ni esta en produccion). Revisar cuando eslint-config-next tenga una version compatible con Next 16.
