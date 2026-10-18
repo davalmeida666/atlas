@@ -1,7 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signout } from "@/app/actions";
-import { createProject, createTask } from "@/app/tasks-actions";
+import {
+  createProject,
+  createTask,
+  setTaskStatus,
+  deleteTask,
+  deleteProject,
+} from "@/app/tasks-actions";
 
 type Proyecto = {
   id: string;
@@ -38,6 +44,10 @@ function formatoFecha(iso: string | null) {
 
 const campo = "rounded border border-gray-400 p-2 text-sm";
 const boton = "rounded bg-blue-600 p-2 text-sm text-white hover:bg-blue-700";
+const botonChico =
+  "rounded border border-gray-400 px-2 py-1 text-xs hover:bg-gray-500/10";
+const botonPeligro =
+  "rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700";
 
 export default async function Home({
   searchParams,
@@ -120,12 +130,26 @@ export default async function Home({
         ) : (
           <ul className="flex flex-col gap-2">
             {proyectos.map((p) => (
-              <li key={p.id} className="rounded border border-gray-400 p-3">
-                <p className="font-medium">{p.name}</p>
-                {p.description && <p className="text-sm text-gray-500">{p.description}</p>}
-                {p.due_at && (
-                  <p className="text-xs text-gray-500">Vence: {formatoFecha(p.due_at)}</p>
-                )}
+              <li key={p.id} className="flex flex-col gap-2 rounded border border-gray-400 p-3">
+                <div>
+                  <p className="font-medium">{p.name}</p>
+                  {p.description && <p className="text-sm text-gray-500">{p.description}</p>}
+                  {p.due_at && (
+                    <p className="text-xs text-gray-500">Vence: {formatoFecha(p.due_at)}</p>
+                  )}
+                </div>
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-red-500">Borrar proyecto</summary>
+                  <form className="mt-2 flex flex-col gap-2">
+                    <p className="text-gray-500">
+                      Sus tareas no se borran: quedarán sin proyecto.
+                    </p>
+                    <input type="hidden" name="id" value={p.id} />
+                    <button formAction={deleteProject} className={botonPeligro}>
+                      Sí, borrar proyecto
+                    </button>
+                  </form>
+                </details>
               </li>
             ))}
           </ul>
@@ -158,22 +182,73 @@ export default async function Home({
             Crear tarea
           </button>
         </form>
-
         {tareas.length === 0 ? (
           <p className="text-sm text-gray-500">Todavía no tienes tareas.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {tareas.map((t) => (
-              <li key={t.id} className="rounded border border-gray-400 p-3">
-                <p className="font-medium">{t.title}</p>
-                {t.notes && <p className="text-sm text-gray-500">{t.notes}</p>}
-                <p className="text-xs text-gray-500">
-                  {ESTADOS[t.status] ?? t.status}
-                  {t.project_id && nombreProyecto.get(t.project_id)
-                    ? ` · ${nombreProyecto.get(t.project_id)}`
-                    : ""}
-                  {t.due_at ? ` · Vence: ${formatoFecha(t.due_at)}` : ""}
-                </p>
+              <li key={t.id} className="flex flex-col gap-2 rounded border border-gray-400 p-3">
+                <div>
+                  <p
+                    className={
+                      t.status === "completada"
+                        ? "font-medium text-gray-500 line-through"
+                        : "font-medium"
+                    }
+                  >
+                    {t.title}
+                  </p>
+                  {t.notes && <p className="text-sm text-gray-500">{t.notes}</p>}
+                  <p className="text-xs text-gray-500">
+                    {ESTADOS[t.status] ?? t.status}
+                    {t.project_id && nombreProyecto.get(t.project_id)
+                      ? ` · ${nombreProyecto.get(t.project_id)}`
+                      : ""}
+                    {t.due_at ? ` · Vence: ${formatoFecha(t.due_at)}` : ""}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-start gap-4">
+                  <div className="flex gap-2">
+                    {t.status === "pendiente" && (
+                      <form>
+                        <input type="hidden" name="id" value={t.id} />
+                        <input type="hidden" name="status" value="en_progreso" />
+                        <button formAction={setTaskStatus} className={botonChico}>
+                          Iniciar
+                        </button>
+                      </form>
+                    )}
+                    {t.status !== "completada" && (
+                      <form>
+                        <input type="hidden" name="id" value={t.id} />
+                        <input type="hidden" name="status" value="completada" />
+                        <button formAction={setTaskStatus} className={botonChico}>
+                          Completar
+                        </button>
+                      </form>
+                    )}
+                    {t.status === "completada" && (
+                      <form>
+                        <input type="hidden" name="id" value={t.id} />
+                        <input type="hidden" name="status" value="pendiente" />
+                        <button formAction={setTaskStatus} className={botonChico}>
+                          Reabrir
+                        </button>
+                      </form>
+                    )}
+                  </div>
+
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-red-500">Borrar</summary>
+                    <form className="mt-2">
+                      <input type="hidden" name="id" value={t.id} />
+                      <button formAction={deleteTask} className={botonPeligro}>
+                        Sí, borrar tarea
+                      </button>
+                    </form>
+                  </details>
+                </div>
               </li>
             ))}
           </ul>
