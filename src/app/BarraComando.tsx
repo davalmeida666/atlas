@@ -9,15 +9,23 @@ type Interpretado = {
   tipo: "tarea" | "proyecto";
   fecha: string | null;
   subtareas: string[];
+  ambito: string | null;
 };
 
 const campo = "rounded border border-gray-400 p-2 text-sm";
 const boton = "rounded bg-blue-600 p-2 text-sm text-white hover:bg-blue-700";
 
-export default function BarraComando({ proyectos }: { proyectos: { id: string; name: string }[] }) {
+export default function BarraComando({
+  proyectos,
+  ambitos,
+}: {
+  proyectos: { id: string; name: string }[];
+  ambitos: { id: string; name: string }[];
+}) {
   const [texto, setTexto] = useState("");
   const [resultado, setResultado] = useState<Interpretado | null>(null);
   const [seleccionadas, setSeleccionadas] = useState<boolean[]>([]);
+  const [ambitoElegido, setAmbitoElegido] = useState<string>("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,10 +34,13 @@ export default function BarraComando({ proyectos }: { proyectos: { id: string; n
     setError("");
     setResultado(null);
     try {
-      const data = await interpretarTextoAction(texto);
+            const data = await interpretarTextoAction(texto);
       setResultado(data);
       // Por defecto, todas las subtareas empiezan marcadas.
       setSeleccionadas(data.subtareas.map(() => true));
+      // El ámbito que eligió la IA (o vacío, si no encontró ninguno).
+      const ambitoEncontrado = ambitos.find((a) => a.name === data.ambito);
+      setAmbitoElegido(ambitoEncontrado?.id ?? "");
     } catch (e) {
       setError((e as Error).message || "No se pudo interpretar el texto.");
     } finally {
@@ -41,9 +52,10 @@ export default function BarraComando({ proyectos }: { proyectos: { id: string; n
     setSeleccionadas((prev) => prev.map((marcada, i) => (i === indice ? !marcada : marcada)));
   }
 
-  function limpiar() {
+   function limpiar() {
     setResultado(null);
     setSeleccionadas([]);
+    setAmbitoElegido("");
     setTexto("");
   }
 
@@ -78,7 +90,21 @@ export default function BarraComando({ proyectos }: { proyectos: { id: string; n
             {resultado.tipo === "proyecto" ? "Proyecto" : "Tarea"}
             {resultado.fecha ? ` · Vence: ${resultado.fecha}` : " · Sin fecha"}
           </p>
-
+          <label className="flex items-center gap-2 text-xs text-gray-500">
+            Ámbito:
+            <select
+              value={ambitoElegido}
+              onChange={(e) => setAmbitoElegido(e.target.value)}
+              className="rounded border border-gray-400 p-1 text-sm text-black dark:text-white"
+            >
+              <option value="">Sin ámbito</option>
+              {ambitos.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
           {resultado.tipo === "proyecto" && resultado.subtareas.length > 0 && (
             <div className="flex flex-col gap-1 rounded bg-gray-500/5 p-2">
               <p className="text-xs text-gray-500">
@@ -103,6 +129,7 @@ export default function BarraComando({ proyectos }: { proyectos: { id: string; n
               <input type="hidden" name="tipo" value={resultado.tipo} />
               <input type="hidden" name="fecha" value={resultado.fecha ?? ""} />
               <input type="hidden" name="subtareas" value={subtareasElegidas.join("\n")} />
+            <input type="hidden" name="scope_id" value={ambitoElegido} /> 
               <button formAction={createFromInterpretation} className={boton}>
                 Crear
               </button>

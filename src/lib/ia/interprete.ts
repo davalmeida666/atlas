@@ -7,6 +7,7 @@ export type TareaInterpretada = {
   tipo: "tarea" | "proyecto";
   fecha: string | null; // formato AAAA-MM-DD, o null si no detectó fecha
   subtareas: string[]; // vacío si tipo es "tarea", o si no se pudieron proponer
+  ambito: string | null; // nombre EXACTO de uno de los ámbitos recibidos, o null
 };
 
 // Le pide a Gemini que devuelva SIEMPRE este formato exacto.
@@ -14,7 +15,7 @@ const INSTRUCCIONES = `Eres el interprete de ATLAS, un asistente de tareas.
 Recibes una frase en español de un estudiante y devuelves SOLO un JSON,
 sin texto adicional, sin backticks de markdown, con esta forma exacta:
 
-{"titulo": string, "tipo": "tarea" o "proyecto", "fecha": "AAAA-MM-DD" o null, "subtareas": string[]}
+{"titulo": string, "tipo": "tarea" o "proyecto", "fecha": "AAAA-MM-DD" o null, "subtareas": string[], "ambito": string o null}
 
 Reglas:
 - "titulo": un resumen corto y claro de lo que hay que hacer.
@@ -25,15 +26,23 @@ Reglas:
   ninguna fecha mencionada, usa null. Nunca inventes una fecha que no este
   implicada por el texto.
 - "subtareas": SOLO si "tipo" es "proyecto", propone entre 3 y 8 pasos cortos,
-  en orden logico, para completarlo (ejemplo: ["Guion", "Storyboard", "Edicion"]).
-  Si "tipo" es "tarea", "subtareas" debe ser un arreglo vacio: [].`;
+  en orden logico, para completarlo. Si "tipo" es "tarea", "subtareas" debe
+  ser un arreglo vacio: [].
+- "ambito": elige, de la lista de AMBITOS DISPONIBLES que te doy abajo, el que
+  mejor encaje con el texto. Debes copiar el nombre EXACTO tal como aparece
+  en la lista, letra por letra. Si ninguno encaja bien, usa null. NUNCA
+  inventes un nombre de ambito que no este en la lista.`;
 export async function interpretarTexto(
   texto: string,
-  hoyISO: string // formato AAAA-MM-DD, ej. "2026-10-18"
+  hoyISO: string, // formato AAAA-MM-DD, ej. "2026-10-18"
+  ambitosDisponibles: string[]
 ): Promise<TareaInterpretada> {
+   const listaAmbitos =
+    ambitosDisponibles.length > 0 ? ambitosDisponibles.join(", ") : "(ninguno todavía)";
+
   const respuesta = await ai.models.generateContent({
     model: "gemini-flash-latest",
-    contents: `FECHA DE HOY: ${hoyISO}\n\nFRASE DEL USUARIO: "${texto}"`,
+    contents: `FECHA DE HOY: ${hoyISO}\n\nAMBITOS DISPONIBLES: ${listaAmbitos}\n\nFRASE DEL USUARIO: "${texto}"`,
     config: {
       systemInstruction: INSTRUCCIONES,
       responseMimeType: "application/json",
@@ -87,5 +96,10 @@ export async function interpretarTexto(
       .slice(0, 8);
   }
 
-  return { titulo, tipo, fecha, subtareas };
+   let ambito: string | null = null;
+  if (typeof obj.ambito === "string" && ambitosDisponibles.includes(obj.ambito)) {
+    ambito = obj.ambito;
+  }
+
+  return { titulo, tipo, fecha, subtareas, ambito };
 }

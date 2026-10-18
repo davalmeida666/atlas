@@ -119,7 +119,7 @@ export default async function Home({
       <p className="rounded bg-yellow-500/10 p-2 text-xs text-yellow-600">
         Pantalla provisional de la Fase 2: sirve para comprobar que los datos se guardan.
       </p>
-            <BarraComando proyectos={proyectos} />
+                  <BarraComando proyectos={proyectos} ambitos={ambitos} />
 
 
       {error && <p className="text-sm text-red-500">{error}</p>}

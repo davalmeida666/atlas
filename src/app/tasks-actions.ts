@@ -141,7 +141,8 @@ export async function createFromInterpretation(formData: FormData) {
   const titulo = texto(formData, "titulo");
   const tipo = texto(formData, "tipo");
   const fechaPlano = texto(formData, "fecha"); // AAAA-MM-DD o vacío
-  const subtareasTexto = texto(formData, "subtareas"); // separadas por saltos de línea
+    const subtareasTexto = texto(formData, "subtareas"); // separadas por saltos de línea
+  const scopeId = texto(formData, "scope_id") || null;
 
   if (!titulo) volverConError("No hay título para guardar.");
 
@@ -156,7 +157,7 @@ export async function createFromInterpretation(formData: FormData) {
     // Paso 1: crear el proyecto y leer su id.
     const { data: proyectoCreado, error: errorProyecto } = await supabase
       .from("projects")
-      .insert({ name: titulo, due_at: due })
+            .insert({ name: titulo, due_at: due, scope_id: scopeId })
       .select("id")
       .single();
 
@@ -182,9 +183,10 @@ export async function createFromInterpretation(formData: FormData) {
       }
     }
   } else {
-    const { error } = await supabase.from("tasks").insert({
+        const { error } = await supabase.from("tasks").insert({
       title: titulo,
       due_at: due,
+      scope_id: scopeId,
     });
     if (error) {
       console.error("createFromInterpretation(tarea):", error.message);

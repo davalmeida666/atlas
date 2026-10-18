@@ -21,3 +21,5 @@
 - Fase 5 parte A: tabla scopes (ambitos) con RLS. projects y tasks tienen scope_id opcional.
 - Ambitos iniciales sembrados: Universidad, Personal, Salud y Bienestar, Social, Proyectos Personales.
 - Fase 5 parte B: seccion de ambitos (crear, borrar) y selector de ambito en cada proyecto y tarea, que guarda al cambiar.
+- Fase 5 parte C: el interprete recibe la lista de ambitos del usuario y propone uno (o ninguno). El codigo valida que el ambito elegido exista realmente antes de usarlo. El usuario puede cambiarlo antes de confirmar.
+- Las subtareas generadas no heredan automaticamente el ambito del proyecto (pendiente para una fase futura).
