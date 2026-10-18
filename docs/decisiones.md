@@ -13,3 +13,5 @@
 - Fase 2: RLS verificado con un segundo usuario: cada cuenta solo ve sus propios datos.
 - Fase 3: se corrigio la vulnerabilidad critica de Next.js (subido a 16.4.2) y las de sharp y source-map-js.
 - PENDIENTE: vulnerabilidad de "braces" via eslint-config-next. Es solo del linter (no afecta a usuarios ni esta en produccion). Revisar cuando eslint-config-next tenga una version compatible con Next 16.
+- Fase 3 parte B: interprete de lenguaje natural con Gemini (gemini-flash-latest). Responde JSON validado por el codigo; el codigo nunca confia ciegamente en el modelo.
+- TEMPORAL: pantalla /interprete-test solo para pruebas, se elimina en la parte C.
