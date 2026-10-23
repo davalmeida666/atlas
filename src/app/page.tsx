@@ -13,6 +13,7 @@ import {
   setTaskScope,
 } from "@/app/tasks-actions";
 import BarraComando from "@/app/BarraComando";
+import { prioridadDe } from "@/lib/prioridad";
 
 type Ambito = {
   id: string;
@@ -94,6 +95,8 @@ export default async function Home({
     const ambitos = (respAmbitos.data ?? []) as Ambito[];
   const proyectos = (respProyectos.data ?? []) as Proyecto[];
   const tareas = (respTareas.data ?? []) as Tarea[];
+  // Ordenamos por prioridad: las más urgentes primero.
+  tareas.sort((a, b) => prioridadDe(b).puntaje - prioridadDe(a).puntaje);
   const errorLectura = respAmbitos.error || respProyectos.error || respTareas.error;
   const nombreAmbito = new Map(ambitos.map((a) => [a.id, a.name]));
 

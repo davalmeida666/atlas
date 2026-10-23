@@ -23,3 +23,4 @@
 - Fase 5 parte B: seccion de ambitos (crear, borrar) y selector de ambito en cada proyecto y tarea, que guarda al cambiar.
 - Fase 5 parte C: el interprete recibe la lista de ambitos del usuario y propone uno (o ninguno). El codigo valida que el ambito elegido exista realmente antes de usarlo. El usuario puede cambiarlo antes de confirmar.
 - Las subtareas generadas no heredan automaticamente el ambito del proyecto (pendiente para una fase futura).
+- Fase 6 parte A: motor de prioridades basado en fecha limite (sin IA, calculo determinista). Las tareas se ordenan por puntaje al mostrarlas. Formula inicial: solo cercania de fecha; duracion y dependencias quedan para fases futuras.
