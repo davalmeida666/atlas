@@ -121,6 +121,20 @@ export default async function Home({
   ];
   const diasAgenda = agruparPorDia(itemsConFecha, 14);
 
+  // Decide el color del día según la urgencia máxima de lo que contiene.
+  function colorDelDia(dia: (typeof diasAgenda)[number]): string {
+    if (dia.items.length === 0) return "border-gray-400";
+
+    const puntajes = dia.items.map((item) =>
+      prioridadDe({ due_at: item.due_at, status: "pendiente" }).puntaje
+    );
+    const maximo = Math.max(...puntajes);
+
+    if (maximo >= 85) return "border-red-500 bg-red-500/10";
+    if (maximo >= 65) return "border-orange-500 bg-orange-500/10";
+    return "border-gray-400";
+  }
+
   const errorLectura = respAmbitos.error || respProyectos.error || respTareas.error;
   const nombreAmbito = new Map(ambitos.map((a) => [a.id, a.name]));
 
@@ -158,9 +172,7 @@ export default async function Home({
               key={dia.fechaISO}
               className={
                 "flex min-w-[140px] flex-col gap-1 rounded border p-2 text-xs " +
-                (dia.esHoy
-                  ? "border-blue-500 bg-blue-500/10"
-                  : "border-gray-400")
+                (dia.esHoy ? "border-blue-500 bg-blue-500/10" : colorDelDia(dia))
               }
             >
               <p className={dia.esHoy ? "font-bold text-blue-600" : "font-medium"}>
