@@ -25,3 +25,4 @@
 - Las subtareas generadas no heredan automaticamente el ambito del proyecto (pendiente para una fase futura).
 - Fase 6 parte A: motor de prioridades basado en fecha limite (sin IA, calculo determinista). Las tareas se ordenan por puntaje al mostrarlas. Formula inicial: solo cercania de fecha; duracion y dependencias quedan para fases futuras.
 - Fase 6 parte B: etiqueta visual de prioridad (color) junto a cada tarea pendiente, oculta en tareas completadas.
+- Fase 7 parte A: vista de calendario tipo agenda (14 dias), agrupando tareas y proyectos con fecha. Usa due_at existente; no se creo tabla nueva. ScheduleBlock (bloques de tiempo) queda para la Fase 8 (Planificador).

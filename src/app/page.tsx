@@ -14,6 +14,11 @@ import {
 } from "@/app/tasks-actions";
 import BarraComando from "@/app/BarraComando";
 import { prioridadDe } from "@/lib/prioridad";
+import {
+  agruparPorDia,
+  formatoDiaLargo,
+  type ItemCalendario,
+} from "@/lib/calendario";
 
 type Ambito = {
   id: string;
@@ -104,6 +109,18 @@ export default async function Home({
   const tareas = (respTareas.data ?? []) as Tarea[];
   // Ordenamos por prioridad: las más urgentes primero.
   tareas.sort((a, b) => prioridadDe(b).puntaje - prioridadDe(a).puntaje);
+
+  // Combinamos tareas y proyectos con fecha para la vista de calendario.
+  const itemsConFecha: ItemCalendario[] = [
+    ...tareas
+      .filter((t) => t.due_at && t.status !== "completada")
+      .map((t) => ({ id: t.id, titulo: t.title, tipo: "tarea" as const, due_at: t.due_at! })),
+    ...proyectos
+      .filter((p) => p.due_at)
+      .map((p) => ({ id: p.id, titulo: p.name, tipo: "proyecto" as const, due_at: p.due_at! })),
+  ];
+  const diasAgenda = agruparPorDia(itemsConFecha, 14);
+
   const errorLectura = respAmbitos.error || respProyectos.error || respTareas.error;
   const nombreAmbito = new Map(ambitos.map((a) => [a.id, a.name]));
 
@@ -131,6 +148,38 @@ export default async function Home({
       </p>
                   <BarraComando proyectos={proyectos} ambitos={ambitos} />
 
+
+      {/* CALENDARIO */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">Próximos 14 días</h2>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {diasAgenda.map((dia) => (
+            <div
+              key={dia.fechaISO}
+              className={
+                "flex min-w-[140px] flex-col gap-1 rounded border p-2 text-xs " +
+                (dia.esHoy
+                  ? "border-blue-500 bg-blue-500/10"
+                  : "border-gray-400")
+              }
+            >
+              <p className={dia.esHoy ? "font-bold text-blue-600" : "font-medium"}>
+                {dia.esHoy ? "Hoy" : formatoDiaLargo(dia.fechaISO)}
+              </p>
+              {dia.items.length === 0 ? (
+                <p className="text-gray-400">Sin pendientes</p>
+              ) : (
+                dia.items.map((item) => (
+                  <p key={`${item.tipo}-${item.id}`} className="truncate" title={item.titulo}>
+                    {item.tipo === "proyecto" ? "📁 " : "• "}
+                    {item.titulo}
+                  </p>
+                ))
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       {errorLectura && (
