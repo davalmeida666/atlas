@@ -54,6 +54,13 @@ function formatoFecha(iso: string | null) {
   });
 }
 
+const COLOR_PRIORIDAD: Record<string, string> = {
+  critica: "bg-red-600 text-white",
+  alta: "bg-orange-500 text-white",
+  media: "bg-yellow-400 text-black",
+  baja: "bg-gray-400 text-white",
+};
+
 const campo = "rounded border border-gray-400 p-2 text-sm";
 const boton = "rounded bg-blue-600 p-2 text-sm text-white hover:bg-blue-700";
 const botonChico =
@@ -257,15 +264,27 @@ export default async function Home({
             {tareas.map((t) => (
               <li key={t.id} className="flex flex-col gap-2 rounded border border-gray-400 p-3">
                 <div>
-                  <p
-                    className={
-                      t.status === "completada"
-                        ? "font-medium text-gray-500 line-through"
-                        : "font-medium"
-                    }
-                  >
-                    {t.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={
+                        t.status === "completada"
+                          ? "font-medium text-gray-500 line-through"
+                          : "font-medium"
+                      }
+                    >
+                      {t.title}
+                    </p>
+                    {t.status !== "completada" && (
+                      <span
+                        className={
+                          "rounded px-2 py-0.5 text-xs font-medium " +
+                          COLOR_PRIORIDAD[prioridadDe(t).nivel]
+                        }
+                      >
+                        {prioridadDe(t).etiqueta}
+                      </span>
+                    )}
+                  </div>
                   {t.notes && <p className="text-sm text-gray-500">{t.notes}</p>}
                                     <p className="text-xs text-gray-500">
                     {ESTADOS[t.status] ?? t.status}
